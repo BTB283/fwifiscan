@@ -103,7 +103,7 @@ int main(int argc, char ** argv)
 
 
   //---------------------------------------------------
-  // ANOTHER DISCLAIMER (NEEDED GPS STATUS FOR THIS ONE)
+  // PRINT CSV COLUMN NAMES
   //---------------------------------------------------
   if (has_gps)
   {
@@ -222,6 +222,7 @@ int main(int argc, char ** argv)
   return(-1);
 }
 
+
 void gps_run()
 {
   while (1)
@@ -234,6 +235,7 @@ void gps_run()
   }
   pthread_exit(NULL);
 }
+
 
 void beep()
 {
