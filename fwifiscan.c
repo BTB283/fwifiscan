@@ -7,6 +7,16 @@
 #define PCM_DEVICE "default"
 
 
+// blacklist stuff
+struct strptr
+{
+  char* str;
+  struct strptr *next;
+};
+struct strptr *blptr;
+struct strptr *blhead;
+
+
 // gps function (updates time and coordinates continually if gps is found)
 void gps_run();
 static struct gps_data_t gpsdata;
@@ -38,8 +48,6 @@ int main(int argc, char ** argv)
   //---------------------------------------------------
   // SET UP ESSID BLACKLIST ARRAY
   //---------------------------------------------------
-  int numtokens = 0;
-  char ** blarr;
   if (argc == 3)
   {
     char * buff;
@@ -61,39 +69,20 @@ int main(int argc, char ** argv)
     buff = malloc(length);
     fgets(buff, length + 1, fp);
     // it would be really good if this below part, down to the fclose was a singly linked list. ill fix it later
-    bool lastcomma = false;
-    char * comma = ',';
-    for (int i = 0; i < length; i++)
+    blhead = malloc(sizeof(struct strptr));
+    blhead->str = strtok(buff, ",");
+    blptr = blhead;
+    while (1)
     {
-      if (buff[i] == comma)
-      {
-        //2 numtokens in a row detected
-        if (lastcomma)
-        {
-          printf("two commas in a row detected in blacklist file\n");
-          return -1;
-        }
-        lastcomma = true;
-        numtokens++;
-      }
-      else
-      {
-        lastcomma = false;
-      }
+        char *newstr = strtok(NULL, ",");
+        if (newstr == NULL) break;
+        struct strptr *new  = malloc(sizeof(struct strptr));
+        blptr->next = new;
+        blptr = new;
+        blptr->str = newstr;
     }
-    // should equal the number of commas + 1
-    numtokens++;
-    blarr = malloc(sizeof(char * ) * numtokens);
-    // create array of tokens
-    comma = ",";
-    blarr[0] = strtok(buff, comma);
-    if (numtokens > 1)
-    {
-      for (int i = 1; i < numtokens; i++)
-      {
-        blarr[i] = strtok(NULL, comma);
-      }
-    }
+    // reset pointer to head, so we can traverse later
+    blptr = blhead;
     fclose(fp);
   }
 
@@ -181,17 +170,24 @@ int main(int argc, char ** argv)
     time( & ctime);
     ltime = localtime( & ctime);
     numnetworks = 0;
+
     while (NULL != result)
     {
       blacklisted = false;
-      for (int i = 0; i < numtokens; i++)
-      {
-        if (strcmp(blarr[i], result -> b.essid) == 0)
+        if (argc == 3)
         {
-          blacklisted = true;
-          break;
+           while (1)
+           {
+            if (strcmp(blptr->str, result->b.essid) == 0)
+            {
+              blacklisted = true;
+              break;
+            }
+            if ( blptr->next == NULL) break; else blptr = blptr->next;
+           }
+           // reset pointer to head, again
+          blptr = blhead;
         }
-      }
       // pretty sure 34816 means unsecured and 2048 means secured
       if (result -> b.key_flags == 34816 && !blacklisted)
       {
