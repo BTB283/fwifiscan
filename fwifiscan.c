@@ -26,10 +26,8 @@ static struct gps_data_t gpsdata;
 void beep();
 static unsigned int numnetworks;
 snd_pcm_t * pcm_handle;
-// baked in beep sounds, all 44100 frames per second, and 1 second long
-extern char _binary___beepone_start[];
-extern char _binary___beeptwo_start[];
-extern char _binary___beepthree_start[];
+// baked in beep sound, all 44100 frames per second, and 1 second long
+extern char _binary___beep_start[];
 
 
 int main(int argc, char ** argv)
@@ -149,7 +147,7 @@ int main(int argc, char ** argv)
   snd_pcm_hw_params_set_access(pcm_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
   snd_pcm_hw_params_set_format(pcm_handle, params, SND_PCM_FORMAT_S16_LE);
   snd_pcm_hw_params_set_channels(pcm_handle, params, 1);
-  snd_pcm_hw_params_set_rate_near(pcm_handle, params, & rate, 0);
+  snd_pcm_hw_params_set_rate_near(pcm_handle, params, &rate, 0);
   snd_pcm_hw_params(pcm_handle, params);
   pthread_t beep_thread;
 
@@ -212,6 +210,7 @@ int main(int argc, char ** argv)
         }
         numnetworks++;
       }
+	fflush(stdout);
       result = result -> next;
     }
     // run the sound on a separate thread so it doesn't interrupt the program and slow down scanning
@@ -240,20 +239,9 @@ void gps_run()
 void beep()
 {
   snd_pcm_prepare(pcm_handle);
-  switch (numnetworks)
+  for (int i = 0; i < numnetworks; i++)
   {
-  case 0:
-    // no networks, therefore no sound
-    break;
-  case 1:
-    snd_pcm_writei(pcm_handle, _binary___beepone_start, 44100);
-    break;
-  case 2:
-    snd_pcm_writei(pcm_handle, _binary___beeptwo_start, 44100);
-    break;
-  default:
-    snd_pcm_writei(pcm_handle, _binary___beepthree_start, 44100);
-    break;
+    snd_pcm_writei(pcm_handle, _binary___beep_start, 22050);
   }
   pthread_exit(NULL);
 }
